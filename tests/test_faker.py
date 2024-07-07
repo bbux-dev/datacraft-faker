@@ -27,9 +27,7 @@ def test_faker_supplier_with_provider():
         "type": "faker",
         "data": "vehicle_make_model",
         "config": {
-            "providers": [
-                {"faker_vehicle": "VehicleProvider"}
-            ]
+            "include": "faker_vehicle"
         }
     }
     models = datacraft.values_for(field_spec, 3)

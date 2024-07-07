@@ -1,4 +1,5 @@
 import importlib
+import inspect
 import json
 import logging
 from typing import Callable
@@ -7,6 +8,7 @@ import datacraft
 import datacraft._registered_types.common as common
 from datacraft import ValueSupplierInterface, SpecException
 from faker import Faker
+from faker.providers import BaseProvider
 
 _FAKER_KEY = "faker"
 _log = logging.getLogger(__name__)
@@ -45,14 +47,18 @@ def _schema():
                             }
                         ]
                     },
-                    "providers": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "additionalProperties": {
+                    "include": {
+                        "oneOf": [
+                            {
                                 "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
                             }
-                        }
+                        ]
                     }
                 }
             }
@@ -72,10 +78,10 @@ class FakerSupplier(ValueSupplierInterface):
 
 
 # Example usage:
-# provider = _dynamic_import('faker_vehicle', 'VehicleProvider')
-def _dynamic_import(module_name, class_name):
+# provider = _dynamic_import('faker_vehicle')
+def _dynamic_import(module_name):
     module = importlib.import_module(module_name)
-    return getattr(module, class_name)
+    return module
 
 
 @datacraft.registry.types(_FAKER_KEY)
@@ -85,7 +91,7 @@ def _supplier(field_spec, loader: datacraft.Loader):
         raise SpecException(f"data field as string is required for faker spec: {json.dumps(field_spec)}")
     config = datacraft.utils.load_config(field_spec, loader)
     fake = Faker(config.get("locale", "en_US"))
-    if "providers" in config:
+    if "include" in config:
         _load_providers(config, fake)
 
     faker_function = _get_faker_method(fake, field_spec["data"])
@@ -93,15 +99,17 @@ def _supplier(field_spec, loader: datacraft.Loader):
 
 
 def _load_providers(config, fake):
-    providers = config["providers"]
-    if not (isinstance(providers, list)) or not all(isinstance(entry, dict) for entry in providers):
-        raise SpecException(
-            "providers config must be list of dictionaries representing module to class to import as provider")
-    for entry in providers:
-        for module_name, class_name in entry.items():
-            # Dynamic import and add provider to faker instance
-            imported_class = _dynamic_import(module_name, class_name)
-            fake.add_provider(imported_class)
+    providers = config.get("include", [])
+    if isinstance(providers, str):
+        providers = [providers]
+    if not isinstance(providers, list) or not all(isinstance(entry, str) for entry in providers):
+        raise SpecException("include config must be a single or list of module names to import as provider")
+
+    for module_name in providers:
+        module = _dynamic_import(module_name)
+        for name, obj in inspect.getmembers(module, inspect.isclass):
+            if issubclass(obj, BaseProvider) and obj is not BaseProvider:
+                fake.add_provider(obj)
 
 
 def _get_faker_method(faker, method_path) -> Callable:
