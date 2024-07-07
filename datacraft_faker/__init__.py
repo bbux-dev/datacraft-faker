@@ -15,22 +15,44 @@ _log = logging.getLogger(__name__)
 ####################
 # Schema Definitions
 ####################
-
-
 @datacraft.registry.schemas(_FAKER_KEY)
 def _schema():
     return {
         "$schema": "http://json-schema.org/draft-07/schema#",
-        "$id": f"https://github.com/bbux-dev/datacraft-faker/schemas/faker.schema.json",
+        "$id": "https://github.com/bbux-dev/datacraft-faker/schemas/faker.schema.json",
         "type": "object",
         "properties": {
-            "type": {"type": "string", "pattern": f"^faker$"},
-            "data": {"type": "string"},
+            "type": {
+                "type": "string",
+                "pattern": "^faker$"
+            },
+            "data": {
+                "type": "string"
+            },
             "config": {
                 "type": "object",
                 "properties": {
                     "locale": {
-                        "type": "string"
+                        "oneOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        ]
+                    },
+                    "providers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -48,6 +70,7 @@ class FakerSupplier(ValueSupplierInterface):
     def next(self, iteration):
         return self.fake_func()
 
+
 # Example usage:
 # provider = _dynamic_import('faker_vehicle', 'VehicleProvider')
 def _dynamic_import(module_name, class_name):
@@ -63,18 +86,22 @@ def _supplier(field_spec, loader: datacraft.Loader):
     config = datacraft.utils.load_config(field_spec, loader)
     fake = Faker(config.get("locale", "en_US"))
     if "providers" in config:
-        providers = config["providers"]
-        if not (isinstance(providers, list)) or not all(isinstance(entry, dict) for entry in providers):
-            raise SpecException(
-                "providers config must be list of dictionaries representing module to class to import as provider")
-        for entry in providers:
-            for module_name, class_name in entry.items():
-                # Dynamic import and add provider to faker instance
-                imported_class = _dynamic_import(module_name, class_name)
-                fake.add_provider(imported_class)
+        _load_providers(config, fake)
 
     faker_function = _get_faker_method(fake, field_spec["data"])
     return FakerSupplier(faker_function)
+
+
+def _load_providers(config, fake):
+    providers = config["providers"]
+    if not (isinstance(providers, list)) or not all(isinstance(entry, dict) for entry in providers):
+        raise SpecException(
+            "providers config must be list of dictionaries representing module to class to import as provider")
+    for entry in providers:
+        for module_name, class_name in entry.items():
+            # Dynamic import and add provider to faker instance
+            imported_class = _dynamic_import(module_name, class_name)
+            fake.add_provider(imported_class)
 
 
 def _get_faker_method(faker, method_path) -> Callable:
@@ -84,19 +111,17 @@ def _get_faker_method(faker, method_path) -> Callable:
         if hasattr(obj, part):
             obj = getattr(obj, part)
         else:
-            raise ValueError(f"Faker method {method_path} does not exist")
+            raise SpecException(f"Faker method {method_path} does not exist")
 
     if callable(obj):
         return obj
     else:
-        raise ValueError(f"{method_path} is not a callable method")
+        raise SpecException(f"{method_path} is not a callable method")
 
 
 ###########################
 # Usage Definitions
 ###########################
-
-
 @datacraft.registry.usage(_FAKER_KEY)
 def _usage():
     """ configure the usage for mgrs types """

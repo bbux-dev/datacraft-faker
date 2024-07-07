@@ -42,7 +42,13 @@ def test_invalid_spec():
         datacraft.entries(spec, 3)
 
 
-def test_non_callable_method():
+def test_undefined_method():
     spec = {"name": {"type": "faker", "data": "not_defined"}}
-    with pytest.raises(ValueError):
+    with pytest.raises(SpecException):
+        datacraft.entries(spec, 3)
+
+
+def test_non_callable():
+    spec = {"name": {"type": "faker", "data": "locales"}}
+    with pytest.raises(SpecException):
         datacraft.entries(spec, 3)
