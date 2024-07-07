@@ -74,7 +74,7 @@ class FakerSupplier(ValueSupplierInterface):
         self.fake_func = fake_func
 
     def next(self, iteration):
-        return self.fake_func()
+        return str(self.fake_func())
 
 
 # Example usage:
@@ -90,7 +90,10 @@ def _supplier(field_spec, loader: datacraft.Loader):
     if "data" not in field_spec or not (isinstance(field_spec["data"], str)):
         raise SpecException(f"data field as string is required for faker spec: {json.dumps(field_spec)}")
     config = datacraft.utils.load_config(field_spec, loader)
-    fake = Faker(config.get("locale", "en_US"))
+    locale = config.get("locale", "en_US")
+    if isinstance(locale, str):
+        locale = locale.split(";") if ";" in locale else locale.split(",")
+    fake = Faker(locale)
     if "include" in config:
         _load_providers(config, fake)
 
@@ -101,7 +104,7 @@ def _supplier(field_spec, loader: datacraft.Loader):
 def _load_providers(config, fake):
     providers = config.get("include", [])
     if isinstance(providers, str):
-        providers = [providers]
+        providers = providers.split(";") if ";" in providers else providers.split(",")
     if not isinstance(providers, list) or not all(isinstance(entry, str) for entry in providers):
         raise SpecException("include config must be a single or list of module names to import as provider")
 
@@ -139,6 +142,13 @@ def _usage():
             "data": "name",
             "config": {
                 "locale": "fr_FR"
+            }
+        },
+        "vehicle": {
+            "type": "faker",
+            "data": "vehicle_make_model",
+            "config": {
+                "include": "faker_vehicle"
             }
         }
     }
