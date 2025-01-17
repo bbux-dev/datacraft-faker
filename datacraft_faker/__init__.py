@@ -86,7 +86,7 @@ def _dynamic_import(module_name):
 
 @datacraft.registry.types(_FAKER_KEY)
 def _supplier(field_spec, loader: datacraft.Loader):
-    """ configure the supplier for mgrs types """
+    """ configure the supplier for faker types """
     if "data" not in field_spec or not (isinstance(field_spec["data"], str)):
         raise SpecException(f"data field as string is required for faker spec: {json.dumps(field_spec)}")
     config = datacraft.utils.load_config(field_spec, loader)
@@ -135,7 +135,7 @@ def _get_faker_method(faker, method_path) -> Callable:
 ###########################
 @datacraft.registry.usage(_FAKER_KEY)
 def _usage():
-    """ configure the usage for mgrs types """
+    """ configure the usage for faker types """
     example = {
         "name": {
             "type": "faker",

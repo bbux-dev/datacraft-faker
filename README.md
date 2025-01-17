@@ -29,7 +29,7 @@ this spec will look something like:
 }
 ```
 
-There type for the field will always be `faker`. The `data` element of the spec is where you define the method name
+The type for the field will always be `faker`. The `data` element of the spec is where you define the method name
 that generates the data of interest. Here are a bunch of examples:
 
 
