@@ -34,10 +34,9 @@ def test_faker_supplier_with_provider():
     assert len(models) == 3
 
 
-def test_invalid_spec():
+def test_formerly_invalid_spec():
     spec = {"name": {"type": "faker"}}
-    with pytest.raises(SpecException):
-        datacraft.entries(spec, 3)
+    assert len(datacraft.entries(spec, 3)) == 3
 
 
 def test_undefined_method():

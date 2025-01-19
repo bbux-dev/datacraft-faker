@@ -155,6 +155,22 @@ def _usage():
     return common.standard_example_usage(example, 3)
 
 
+@datacraft.registry.preprocessors('faker')
+def _push_down_name(raw_spec: dict):
+    updated_specs = {}
+    if not isinstance(raw_spec, dict):
+        # not sure what to do
+        return raw_spec
+
+    for key, value in raw_spec.items():
+        if key == 'refs':
+            updated_specs['refs'] = _push_down_name(value)
+        if isinstance(value, dict) and value.get('type') == 'faker' and value.get('data') == None:
+            value['data'] = key
+        updated_specs[key] = value
+    return updated_specs
+
+
 def load_custom():
     """ called by datacraft entrypoint loader """
     pass

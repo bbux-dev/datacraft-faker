@@ -61,6 +61,21 @@ Note that datacraft has a shorthand notation that works well for faker specs:
 | fake.state()         | {"state:faker": "state"}                 |
 | fake.zipcode()       | {"zipcode:faker": "zipcode"}             |
 
+Note that datacraft-faker extends this when the field name is the same as the provider:
+
+| Faker method         | Shorthand Spec               |
+|----------------------|------------------------------|
+| fake.name()          | {"name:faker": {} }          |
+| fake.address()       | {"address:faker": {} }       |
+| fake.email()         | {"email:faker": {} }         |
+| fake.phone_number()  | {"phone_number:faker": {} }  |
+| fake.company()       | {"company:faker": {} }       |
+| fake.date_of_birth() | {"date_of_birth:faker": {} } |
+| fake.text()          | {"text:faker": {} }          |
+| fake.city()          | {"city:faker": {} }          |
+| fake.state()         | {"state:faker": {} }         |
+| fake.zipcode()       | {"zipcode:faker": {} }       |
+
 
 ## Locales
 
@@ -76,7 +91,7 @@ Field Spec, add the config option `locale`:
       "locale": ["en_GB", "it_IT"]
     }
   },
-  "email:faker?locale=en_GB,it_IT": "email"
+  "email:faker?locale=en_GB,it_IT": {}
 }
 ```
 The record generated for this spec will look something like:
