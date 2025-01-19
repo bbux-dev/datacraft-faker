@@ -121,3 +121,12 @@ The record generated for this spec will look something like:
   "year": "2014"
 }
 ```
+
+## Inspecting available faker types
+
+Here is a shell command that can be used to list the available faker types
+
+```bash
+# assuming pip install faker already done
+faker | grep '()' | sed 's/fake.\(.*\)()/\1/g' | awk '{print $1}'
+```
